@@ -1,5 +1,5 @@
 [workspace]
-members = ["ssins-webserver", "ssins-frontend", "ssins-shared", "ssins-bind"]
+members = ["thrw-webserver", "thrw-frontend", "thrw-shared", "thrw-bind"]
 resolver = "2"
 
 [workspace.dependencies]
@@ -8,8 +8,15 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1.0.140"
 sqlx = { version = "0.8", features = ["runtime-tokio", "postgres", "chrono", "uuid"] }
 argon2 = "0.5.3"
-uuid = "1.17.0"
+uuid = { version = "1.17.0", features = ["serde"] }
 chrono = { version = "0.4.41", features = ["serde"] }
+gloo-utils = { version = "0.2.0", features = ["serde"] }
+gloo-timers = { version = "0.3.0", features = ["futures"] }
+js-sys = "0.3.77"
+web-sys = { version = "0.3.77", features = ["WebSocket", "Performance", "Window"] }
+codee = "0.3.2"
+youtube_dl = { version = "0.10.0", features = ["tokio", "downloader-rustls-tls"] }
+const_format = "0.2.34"
 
 axum = { version = "0.8.4", features = ["macros"] }
 axum-extra = { version ="0.10.1", features = ["cookie"] }
@@ -18,12 +25,12 @@ leptos = { version = "0.8.2", features = ["nightly"] }
 leptos_router = { version = "0.8.2", features = ["nightly"] }
 leptos_axum = "0.8.2"
 leptos_meta = { version = "0.8.2" }
-leptos-use = { version = "0.16.2", features = ["axum"] }
+leptos-use = { version = "0.16.2", features = [] }
 
-tokio = { version = "1.46.1", features = ["full"] }
+tokio = { version = "1.46.1", default-features = false }
 tower = { version = "0.5.2", features = ["full"] }
 tower-http = { version = "0.6.4", features = ["full"] }
-wasm-bindgen = "=0.2.100"
+wasm-bindgen = { version = "=0.2.100", features = ["serde"] }
 
 cookie = { version = "0.18", features = ["signed"]}
 console_error_panic_hook = "0.1.7"
@@ -32,9 +39,9 @@ console_log = "1.0.0"
 [[workspace.metadata.leptos]]
 name = "ssins"
 # the package in the workspace that contains the server binary (binary crate)
-bin-package = "ssins-webserver"
+bin-package = "thrw-webserver"
 # the package in the workspace that contains the frontend wasm binary (library crate)
-lib-package = "ssins-bind"
+lib-package = "thrw-bind"
 
 
 # The site root folder is where cargo-leptos generate all output. WARNING: all content of this folder will be erased on a rebuild. Use it in your server setup.
@@ -51,7 +58,7 @@ style-file = "style/main.scss"
 # The assets-dir cannot have a sub directory with the same name/path as site-pkg-dir.
 #
 # Optional. Env: LEPTOS_ASSETS_DIR.
-# assets-dir = "public"
+assets-dir = "public"
 
 # The IP and port (ex: 127.0.0.1:3000) where the server serves the content. Use it in your server setup.
 site-addr = "127.0.0.1:3000"

@@ -1,0 +1,1 @@
+DROP TABLE vfs_nodes;

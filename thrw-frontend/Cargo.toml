@@ -1,0 +1,41 @@
+[package]
+name = "thrw-frontend"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+thrw-shared = { path = "../thrw-shared" }
+leptos.workspace = true
+leptos-use.workspace = true
+leptos_meta.workspace = true
+leptos_router.workspace = true
+leptos_axum = { workspace = true, optional = true }
+log.workspace = true
+serde_json.workspace = true
+wasm-bindgen.workspace = true
+serde.workspace = true
+serde-wasm-bindgen = "0.6.5"
+js-sys.workspace = true
+web-sys.workspace = true
+sqlx = { workspace = true, optional = true }
+gloo-utils.workspace = true
+gloo-timers.workspace = true
+argon2.workspace = true
+chrono.workspace = true
+tokio = { workspace = true, features = ["sync"] }
+idb = "0.6.4"
+codee.workspace = true
+
+[features]
+default = [
+	"codee/json_serde_wasm", "leptos-use/use_websocket"
+]
+hydrate = [
+	"leptos/hydrate",
+]
+server = [
+	"sqlx",
+	"leptos/ssr", "leptos-use/axum", "leptos_meta/ssr", "leptos_router/ssr", "leptos_axum",
+	"thrw-shared/server",
+	"codee/json_serde"
+]

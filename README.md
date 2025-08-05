@@ -1,2 +1,2 @@
-# the3weeks
-Private webapp
+# 7sins
+Roleplay chat client.
