@@ -14,11 +14,11 @@ pub struct YoutubeRequest {
 
 #[derive(Debug)]
 pub enum MediaRequest {
-	Youtube(YoutubeRequest, Option<oneshot::Sender<YoutubeResult>>),
+	Youtube(YoutubeRequest, Option<oneshot::Sender<YtdlResult>>),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct YoutubeResult {
+pub struct YtdlResult {
 
 }
 

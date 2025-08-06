@@ -57,10 +57,12 @@ async fn main() -> Result<(), StartupError> {
 
 	let app_state = AppState {
 		shared: thrw_shared::app::state::server::SharedAppState {
-			db_pool,
+			db_pool: db_pool.clone(),
 			leptos_options,
 			user_data: Default::default(),
-			dl_context: init_downloader(),
+			dl_context: init_downloader(
+				&db_pool
+			),
 		},
 		socket: Default::default(),
 	};
@@ -69,6 +71,7 @@ async fn main() -> Result<(), StartupError> {
 		thrw_shared::app::media_request::YoutubeRequest { url: "https://www.youtube.com/watch?v=wepdZFa2nUU".to_string(), audio_only: true },
 		None
 	));
+
 
 	// Reset DB if requested
 	let reset_needed = args.contains(&"--revert".to_string());
@@ -95,6 +98,11 @@ async fn main() -> Result<(), StartupError> {
 			.await?
 		;
 	}
+
+	tokio::spawn(async move {
+		let res = thrw_shared::vfs::util::init_vfs(&db_pool).await;
+		println!("vfs init res: {res:?}");
+	});
 
 	let cors = {
 		#[cfg(debug_assertions)]
