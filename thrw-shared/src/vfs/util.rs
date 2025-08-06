@@ -1,6 +1,7 @@
-use std::{ffi::OsStr, fs::DirEntry, path::{Path, PathBuf}};
+use std::{ffi::OsStr, fs::DirEntry, path::{Path, PathBuf}, str::FromStr};
 
 use sqlx::{Pool, Postgres};
+use tokio::try_join;
 
 use super::prelude::*;
 
@@ -11,17 +12,38 @@ mod consts {
 }
 
 #[derive(Debug, Clone)]
+pub struct VfsFileData {
+	pub name: String,
+	pub file: FileRef,
+	pub file_type: VFSFileType,
+}
+impl VfsFileData {
+	pub fn move_file(&mut self, path: impl AsRef<std::path::Path>) -> Result<&FileRef, VFSError> {
+		let new_path = self.file.clone().move_file(path)?;
+		self.file = new_path.clone();
+		Ok(&self.file)
+	}
+}
+
+#[derive(Debug, Clone)]
 pub struct FileRef {
 	pub path: PathBuf,
+	pub file_size: i64,
 }
 impl From<DirEntry> for FileRef {
 	fn from(value: DirEntry) -> Self {
-		Self { path: value.path() }
+		Self {
+			path: value.path(),
+			file_size: value.metadata().map(|md| md.len() as i64).unwrap_or(0)
+		}
 	}
 }
 impl From<&DirEntry> for FileRef {
 	fn from(value: &DirEntry) -> Self {
-		Self { path: value.path() }
+		Self {
+			path: value.path(),
+			file_size: value.metadata().map(|md| md.len() as i64 ).unwrap_or(0)
+		}
 	}
 }
 impl FileRef {
@@ -32,7 +54,8 @@ impl FileRef {
 		}
 		std::fs::rename(self.path, path).map_err(VFSError::Io)?;
 		Ok(Self {
-			path: path.to_path_buf()
+			path: path.to_path_buf(),
+			..self
 		})
 	}
 }
@@ -175,6 +198,75 @@ async fn create_vfs_node(
 	Ok(node.id)
 }
 
+async fn create_vfs_file(
+	db_pool: &Pool<Postgres>,
+	file_data: VfsFileData,
+) -> Result<uuid::Uuid, VFSError> {
+	let file_name = file_data.file.path
+		.file_name()
+		.map(OsStr::to_str)
+		.flatten()
+		.unwrap_or("NO_FILENAME?")
+	;
+
+	let path = file_data.file.path.to_str().unwrap_or(consts::VFS_PATH_ROOT);
+
+	let id = uuid::Uuid::from_str(file_name)
+		.ok()
+		.unwrap_or_else(uuid::Uuid::new_v4)
+	;
+	let new_file = sqlx::query!("
+		INSERT INTO vfs_files
+			(id, file_path, file_size, file_type)
+		VALUES
+			($1, $2, $3, $4)
+		RETURNING
+			id
+		;",
+		id, path, file_data.file.file_size, file_data.file_type.to_string()
+	)
+		.fetch_one(db_pool)
+		.await
+		.map_err(VFSError::Sql)?
+	;
+
+	let spec_id = match file_data.file_type {
+		VFSFileType::Audio => {
+			
+		},
+		VFSFileType::Video => {
+
+		},
+		VFSFileType::Image => {
+
+		},
+		VFSFileType::Text => {
+
+		},
+	};
+
+	Ok(new_file.id)
+}
+
+async fn set_vfs_file_to_node(
+	db_pool: &Pool<Postgres>,
+	file_id: uuid::Uuid,
+	node_id: uuid::Uuid,
+) -> Result<(), VFSError> {
+	sqlx::query!("
+		UPDATE vfs_nodes
+		SET vfs_file = $2
+		WHERE id = $1
+		;",
+		node_id,
+		file_id
+	)
+		.execute(db_pool)
+		.await
+		.map_err(VFSError::Sql)
+		.map(|_| ())
+}
+
 /// create the needed vfs path, returning the last node's id
 pub async fn ensure_vfs_path(
 	db_pool: &Pool<Postgres>,
@@ -200,7 +292,7 @@ pub async fn ensure_vfs_path(
 }
 
 pub async fn commit_file_to_vfs(
-	file: FileRef,
+	mut data: VfsFileData,
 	db_pool: &Pool<Postgres>,
 	vfs_path: Option<PathBuf>,
 ) -> Result<uuid::Uuid, VFSError> {
@@ -209,7 +301,7 @@ pub async fn commit_file_to_vfs(
 
 	let path = get_hierarchial_hash_path(file_uuid);
 	// path.add_extension(file.path.extension().unwrap_or(OsStr::new("")));
-	let file = file.move_file(path)?;
+	let file = data.move_file(path)?;
 	// println!("file moved to '{:?}'", file.path);
 
 	let parent = if let Some(vfs_path) = vfs_path {
@@ -218,7 +310,19 @@ pub async fn commit_file_to_vfs(
 		ensure_vfs_root(db_pool).await?
 	};
 
-	
+	let file_t = create_vfs_file(db_pool, data.clone());
+	let node_t = create_vfs_node(
+		db_pool,
+		data.name.clone(),
+		Some(parent)
+	);
+
+	let (file_id, node_id) = try_join!(
+		file_t,
+		node_t
+	)?;
+
+	set_vfs_file_to_node(db_pool, file_id, node_id).await?;
 
 	todo!()
 }

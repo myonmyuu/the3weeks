@@ -1,7 +1,7 @@
 use std::{ffi::{OsStr, OsString}, future::{join, Future}};
 
 use sqlx::{Pool, Postgres};
-use thrw_shared::{app::media_request::{DownloaderContext, MediaRequest, YoutubeRequest, YtdlResult}, make_error_type, vfs::util::commit_file_to_vfs};
+use thrw_shared::{app::media_request::{DownloaderContext, MediaRequest, YoutubeRequest, YtdlResult}, make_error_type, vfs::{shared::{VFSFileType}, util::commit_file_to_vfs}};
 use tokio::{sync::{mpsc::{unbounded_channel, UnboundedReceiver}, oneshot}, try_join};
 
 mod consts {
@@ -74,13 +74,19 @@ async fn handle_yt_dl(
 		.ok_or(LocalDowloadError::NoTempFile)?
 	;
 
-	let _ = commit_file_to_vfs(entry.into(), &db_pool, None).await;
+	let file_data = thrw_shared::vfs::util::VfsFileData {
+		name: output.title.unwrap_or("UNKNOWN TITLE??".to_string()),
+		file: entry.into(),
+		file_type: if req.audio_only { VFSFileType::Audio } else { VFSFileType::Video }
+	};
+
+	let _ = commit_file_to_vfs(file_data.clone(), &db_pool, None).await;
 
 	if ret.map_or_default(|a| a.send(YtdlResult {  }).is_err()) {
 		// TODO: log ? 
 	}
 
-	println!("download of '{}' completed", output.title.unwrap_or("UNKNOWN TITLE??".to_string()));
+	println!("download of '{file_data:?}' completed");
 	// println!("file format: {:?}", output.);
 	Ok(())
 }

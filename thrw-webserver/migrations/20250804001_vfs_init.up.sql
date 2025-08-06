@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS vfs_files(
 ,	file_size	BIGINT NOT NULL
 ,	file_type	TEXT NOT NULL CHECK (file_type IN ('audio', 'video', 'image', 'text'))
 ,	mime_type	TEXT
-,	created_at	TIMESTAMPTZ NOT NULL
+,	created_at	TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS image_files(
@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS vfs_nodes(
 ,	parent_id	UUID REFERENCES vfs_nodes(id) ON DELETE CASCADE
 ,	node_name	TEXT NOT NULL
 ,	vfs_file	UUID REFERENCES vfs_files(id) ON DELETE CASCADE
-,	created_at	TIMESTAMPTZ DEFAULT now()
+,	created_at	TIMESTAMPTZ NOT NULL DEFAULT now()
 ,	updated_at	TIMESTAMPTZ
 );
 
