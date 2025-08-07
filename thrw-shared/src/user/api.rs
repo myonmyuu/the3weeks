@@ -2,7 +2,7 @@ use std::net::SocketAddr;
 
 use serde::{Deserialize, Serialize};
 
-use crate::prelude::client::*;
+use crate::prelude::*;
 use crate::user::prelude::*;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

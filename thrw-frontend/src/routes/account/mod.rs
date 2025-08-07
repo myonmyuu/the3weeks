@@ -2,8 +2,7 @@
 use crate::{prelude::*};
 
 pub(self) mod consts {
-	const ACC_IDS: i32 = 20000;
-	pub const CHAR_LIST_ID: i32 = ACC_IDS + 1;
+	pub const CHAR_LIST_ID: i32 = crate::prelude::ACC_IDS + 1;
 }
 
 #[component]

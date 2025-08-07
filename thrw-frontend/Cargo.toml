@@ -25,6 +25,7 @@ chrono.workspace = true
 tokio = { workspace = true, features = ["sync"] }
 idb = "0.6.4"
 codee.workspace = true
+uuid = { workspace = true, features = ["js"] }
 
 [features]
 default = [

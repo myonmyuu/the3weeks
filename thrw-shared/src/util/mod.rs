@@ -1,10 +1,11 @@
-use std::time::Duration;
+use std::{fmt::Debug, time::Duration};
 
 #[cfg(feature = "server")]
 use std::time::Instant;
 #[cfg(feature = "server")]
 use argon2::{password_hash::{PasswordHasher, PasswordVerifier, rand_core::OsRng, SaltString}, Argon2};
 
+use leptos::prelude::ServerFnError;
 #[cfg(not(feature = "server"))]
 use web_sys::window;
 
@@ -88,4 +89,8 @@ where
 		gloo_timers::future::sleep(Duration::from_millis(50)).await;
 	}
 	Err(())
+}
+
+pub fn make_server_err<T: Debug>(err: T) -> ServerFnError {
+	ServerFnError::ServerError(format!("{err:?}"))
 }

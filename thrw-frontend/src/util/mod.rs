@@ -5,10 +5,11 @@ use crate::prelude::*;
 pub mod consts {
 	pub const ACC_IDS: i32 = 20000;
 	pub const ADMIN_IDS: i32 = 30000;
+	pub const VFS_IDS: i32 = 40000;
 }
 
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct ReviewEvent<const ID: i32> {
 	signal: RwSignal<i32>,
 }

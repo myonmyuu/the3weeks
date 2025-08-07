@@ -1,7 +1,7 @@
 use std::{ffi::{OsStr, OsString}, future::{join, Future}};
 
 use sqlx::{Pool, Postgres};
-use thrw_shared::{app::media_request::{DownloaderContext, MediaRequest, YoutubeRequest, YtdlResult}, make_error_type, vfs::{shared::{VFSFileType}, util::commit_file_to_vfs}};
+use thrw_shared::{app::media_request::{DownloaderContext, MediaRequest, MediaRequestError, YtdlRequest, YtdlResult}, downloader::shared::DownloaderError, make_error_type, media::util::get_media_file_metadata, vfs::util::{commit_file_to_vfs, VFSFileType}};
 use tokio::{sync::{mpsc::{unbounded_channel, UnboundedReceiver}, oneshot}, try_join};
 
 mod consts {
@@ -15,29 +15,13 @@ mod consts {
 	pub const YT_DL_TEMP_FILENAME: &str = "TEMP";
 }
 
-#[derive(Debug, Clone)]
-enum LocalDowloadError {
-	YtdlInitError,
-	YtdlNotSingle,
-	NoTempFile,
-}
-
-make_error_type!{
-	DownloaderError {
-		Local(LocalDowloadError),
-		Ytdl(youtube_dl::Error),
-		Io(std::io::Error),
-	}
-}
-
 async fn handle_yt_dl(
-	req: YoutubeRequest,
-	ret: Option<oneshot::Sender<YtdlResult>>,
+	req: YtdlRequest,
 	db_pool: Pool<Postgres>,
-) -> Result<(), DownloaderError> {
+) -> Result<YtdlResult, DownloaderError> {
 	if let Err(err) = dl_ytdl_if_needed().await {
 		println!("error downloading ytdl: {err:?}");
-		return Err(LocalDowloadError::YtdlInitError.into());
+		return Err(DownloaderError::YtdlInitError.into());
 	}
 
 	println!("downloading media at '{}'", req.url);
@@ -59,36 +43,29 @@ async fn handle_yt_dl(
 	let (output, _) = try_join!(
 		output_b.run_async(),
 		dl_b.download_to_async(path)
-	)?;
+	)
+		.map_err(DownloaderError::Ytdl)?
+	;
 	let output = output.into_single_video()
-		.ok_or(LocalDowloadError::YtdlNotSingle)?
+		.ok_or(DownloaderError::YtdlNotSingle)?
 	;
 
-	let files: Result<Vec<_>, std::io::Error> = std::fs::read_dir(path)?
+	let files: Result<Vec<_>, std::io::Error> = std::fs::read_dir(path)
+		.map_err(DownloaderError::Io)?
 		.collect()
 	;
-	let files = files?;
+	let files = files.map_err(DownloaderError::Io)?;
 	let entry = files
 		.iter()
 		.find(|en| en.path().with_extension("").file_name().map(OsStr::to_str).unwrap_or(Some("")).unwrap_or("") == consts::YT_DL_TEMP_FILENAME)
-		.ok_or(LocalDowloadError::NoTempFile)?
+		.ok_or(DownloaderError::NoTempFile)?
 	;
 
-	let file_data = thrw_shared::vfs::util::VfsFileData {
-		name: output.title.unwrap_or("UNKNOWN TITLE??".to_string()),
+	let result = YtdlResult {
 		file: entry.into(),
-		file_type: if req.audio_only { VFSFileType::Audio } else { VFSFileType::Video }
+		output: output,
 	};
-
-	let _ = commit_file_to_vfs(file_data.clone(), &db_pool, None).await;
-
-	if ret.map_or_default(|a| a.send(YtdlResult {  }).is_err()) {
-		// TODO: log ? 
-	}
-
-	println!("download of '{file_data:?}' completed");
-	// println!("file format: {:?}", output.);
-	Ok(())
+	Ok(result)
 }
 
 async fn dl_ytdl_if_needed() -> Result<(), DownloaderError> {
@@ -98,10 +75,10 @@ async fn dl_ytdl_if_needed() -> Result<(), DownloaderError> {
 	}
 
 	println!("downloading ytdl...");
-	youtube_dl::download_yt_dlp(path)
+	youtube_dl::download_yt_dlp(consts::YT_DL_DIR)
 		.await
 		.map(|_| ())
-		.map_err(Into::into)
+		.map_err(DownloaderError::Ytdl)
 }
 
 fn make_handler(
@@ -111,13 +88,17 @@ fn make_handler(
 	async move {
 		while let Some(message) = message_recv.recv().await {
 			match message {
-				MediaRequest::Youtube(req, ret) => {
-					if let Err(err) = handle_yt_dl(req, ret, db_pool.clone()).await {
-						println!("error with youtube request: {err:?}");
-					}
+				MediaRequest::Ytdl(req, ret) => {
+					let _ = ret.send(
+						handle_yt_dl(req, db_pool.clone())
+							.await
+							.map_err(MediaRequestError::Dl)
+					);
 				},
 			}
 		}
+
+		println!("media downloader thread closing");
 	}
 }
 

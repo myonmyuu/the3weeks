@@ -16,22 +16,26 @@ CREATE TABLE IF NOT EXISTS image_files(
 );
 
 CREATE TABLE IF NOT EXISTS audio_files(
-	id			UUID PRIMARY KEY REFERENCES vfs_files(id) ON DELETE CASCADE
-,	thumbnail	UUID REFERENCES image_files(id) ON DELETE SET NULL
-,	duration	FLOAT NOT NULL
-,	bitrate		INTEGER
-,	sample_rate	INTEGER
-,	channels	INTEGER
+	id				UUID PRIMARY KEY REFERENCES vfs_files(id) ON DELETE CASCADE
+,	thumbnail		UUID REFERENCES image_files(id) ON DELETE SET NULL
+,	duration		FLOAT NOT NULL
+,	codec_name		TEXT
+,	bitrate			INTEGER
+,	sample_format	TEXT
+,	sample_rate		INTEGER
+,	channels		INTEGER
 );
 
 CREATE TABLE IF NOT EXISTS video_files(
-	id			UUID PRIMARY KEY REFERENCES vfs_files(id) ON DELETE CASCADE
-,	thumbnail	UUID REFERENCES image_files(id) ON DELETE SET NULL
-,	duration	FLOAT NOT NULL
-,	resolution	TEXT
-,	frame_rate	FLOAT
-,	video_codec	TEXT
-,	audio_codec	TEXT
+	id				UUID PRIMARY KEY REFERENCES vfs_files(id) ON DELETE CASCADE
+,	thumbnail		UUID REFERENCES image_files(id) ON DELETE SET NULL
+,	duration		FLOAT NOT NULL
+,	width			SMALLINT
+,	height			SMALLINT
+,	r_frame_rate	TEXT
+,	avg_frame_rate	TEXT
+,	video_codec		TEXT
+,	audio_codec		TEXT
 );
 
 CREATE TABLE IF NOT EXISTS vfs_nodes(
@@ -44,9 +48,9 @@ CREATE TABLE IF NOT EXISTS vfs_nodes(
 );
 
 CREATE TABLE IF NOT EXISTS node_closures(
-	ancestor	UUID REFERENCES vfs_nodes(id)
-,	descendant	UUID REFERENCES vfs_nodes(id)
-,	depth		INTEGER
+	ancestor	UUID NOT NULL REFERENCES vfs_nodes(id) ON DELETE CASCADE
+,	descendant	UUID NOT NULL REFERENCES vfs_nodes(id) ON DELETE CASCADE
+,	depth		INTEGER NOT NULL
 ,	PRIMARY KEY	(ancestor, descendant)
 );
 

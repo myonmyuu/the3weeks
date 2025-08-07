@@ -67,12 +67,6 @@ async fn main() -> Result<(), StartupError> {
 		socket: Default::default(),
 	};
 
-	app_state.shared.dl_context.request_channel.send(thrw_shared::app::media_request::MediaRequest::Youtube(
-		thrw_shared::app::media_request::YoutubeRequest { url: "https://www.youtube.com/watch?v=wepdZFa2nUU".to_string(), audio_only: true },
-		None
-	));
-
-
 	// Reset DB if requested
 	let reset_needed = args.contains(&"--revert".to_string());
 	if reset_needed {
@@ -99,10 +93,13 @@ async fn main() -> Result<(), StartupError> {
 		;
 	}
 
-	tokio::spawn(async move {
-		let res = thrw_shared::vfs::util::init_vfs(&db_pool).await;
-		println!("vfs init res: {res:?}");
-	});
+	if let Err(err) = thrw_shared::vfs::util::init_vfs(&db_pool).await {
+		println!("error setting up vfs: {err:?}")
+	}
+	
+	if let Err(err) = thrw_shared::media::util::init_media(&db_pool).await {
+		println!("error setting up media: {err:?}")
+	}
 
 	let cors = {
 		#[cfg(debug_assertions)]

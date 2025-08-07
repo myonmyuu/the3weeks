@@ -22,10 +22,15 @@ cookie.workspace = true
 leptos-use.workspace = true
 argon2.workspace = true
 uuid.workspace = true
+
 serde.workspace = true
 serde_json.workspace = true
+serde_with.workspace = true
+
 youtube_dl.workspace = true
 const_format.workspace = true
+ffmpeg-sidecar.workspace = true
+anyhow.workspace = true
 
 dotenvy = "0.15.7"
 
