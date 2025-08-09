@@ -1,3 +1,4 @@
+use leptos_router::components::AProps;
 use thrw_shared::{app::state::{client::LoginContext, shared::LoginState}, user::api::log_out};
 
 use crate::prelude::*;
@@ -6,16 +7,17 @@ use crate::prelude::*;
 pub fn Header() -> impl IntoView {
 	let login_ctx = use_context::<LoginContext>().expect("login context missing");
 	let login = login_ctx.login_state;
-	
+
 	view! {
 		<header>
 			<div class="links_l">
-				<a href="/" class="logo" >The 3 Weeks</a>
+				<A href="/" attr:class="logo" >The 3 Weeks</A>
 			</div>
 			<div class="links_r">
 				<Show when=move || !matches!(check_login(None), Some(true)) fallback=move||view! {
-					<a href="/admin">Admin</a>
-					<a href="/account">Account</a>
+					<A href="/vfs/root">VFS</A>
+					<A href="/admin">Admin</A>
+					<A href="/account">Account</A>
 					<button
 						on:click= move |_| {
 							let login = login;
@@ -29,8 +31,8 @@ pub fn Header() -> impl IntoView {
 						Logout
 					</button>
 				}>
-					<a href="/register">Register</a>
-					<a href="/login">Login</a>
+					<A href="/register">Register</A>
+					<A href="/login">Login</A>
 				</Show>
 			</div>
 		</header>

@@ -28,5 +28,6 @@ pub enum MediaRequest {
 #[derive(Debug, Clone)]
 pub struct YtdlResult {
 	pub output: SingleVideo,
-	pub file: FileRef,
+	pub media: FileRef,
+	pub thumbnail: Option<FileRef>,
 }

@@ -1,0 +1,25 @@
+div.vfs_node {
+	display: flex;
+	position: relative;
+	height: 60px;
+	line-height: 24px;
+	background-color: gray;
+
+	border: 0px solid;
+    border-width: 1px 0px;
+}
+
+.vfs_node img {
+	object-fit: scale-down;
+}
+
+.vfs_link {
+	flex: 1;
+	text-decoration: none;
+	color: white;
+	padding: 0 22px;
+	font-size: 18px;
+
+    inset: 0;
+    display: block;
+}

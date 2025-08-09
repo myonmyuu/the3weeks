@@ -1,3 +1,4 @@
+DROP TABLE vfs_thumbs;
 DROP TABLE audio_files;
 DROP TABLE video_files;
 DROP TABLE image_files;

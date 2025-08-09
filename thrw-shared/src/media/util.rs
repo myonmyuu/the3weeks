@@ -29,7 +29,7 @@ impl ToString for MediaCodecType {
 }
 
 #[derive(Debug, Clone, Deserialize)]
-pub struct FFProbeOutput {
+pub struct FFProbeMediaOutput {
     pub streams: Vec<Stream>,
     pub format: Format,
 }
@@ -127,14 +127,14 @@ pub struct Format {
     pub nb_stream_groups: Option<i32>,
     pub format_name: String,
     pub format_long_name: String,
-    pub start_time: String,
-	#[serde_as(as = "DisplayFromStr")]
-    pub duration: f64,
+    pub start_time: Option<String>,
+	#[serde_as(as = "Option<DisplayFromStr>")]
+    pub duration: Option<f64>,
 	#[serde_as(as = "DisplayFromStr")]
     pub size: u64,
-	#[serde_as(as = "DisplayFromStr")]
-    pub bit_rate: i32,
-    pub probe_score: i32,
+	#[serde_as(as = "Option<DisplayFromStr>")]
+    pub bit_rate: Option<i32>,
+    pub probe_score: Option<i32>,
     pub tags: Option<FormatTags>,
 }
 
@@ -150,21 +150,26 @@ pub struct FormatTags {
     pub encoder: Option<String>,
 }
 
+fn get_file_metadata_output(
+	path: PathBuf,
+) -> Result<std::process::Output, MediaError> {
+	let path = path.to_string_lossy();
+	Command::new("ffprobe")
+		.args([
+			"-v", "error",
+			"-print_format", "json",
+			"-show_format",
+			"-show_streams",
+			&path
+		])
+		.output()
+		.map_err(MediaError::Io)
+}
+
 pub async fn get_media_file_metadata(
 	path: PathBuf,
-) -> Result<FFProbeOutput, MediaError> {
-	let path = path.to_str().ok_or(MediaError::InvalidPath)?;
-	let output  = Command::new("ffprobe")
-        .args([
-            "-v", "error",
-            "-print_format", "json",
-            "-show_format",
-            "-show_streams",
-            path
-        ])
-        .output()
-		.map_err(MediaError::Io)?
-	;
+) -> Result<FFProbeMediaOutput, MediaError> {
+	let output  = get_file_metadata_output(path)?;
 	
 	serde_json::from_slice(&output.stdout).map_err(MediaError::Json)
 }
@@ -177,6 +182,13 @@ pub async fn init_media(
 		.map_err(MediaError::Ffmpeg)?
 	;
 
+	#[cfg(debug_assertions)]
+	{
+		let _ = crate::util::copy_dir_all(
+			std::path::PathBuf::from("./site"),
+			std::path::PathBuf::from("./target/site")
+		);
+	}
 	
 
 	Ok(())

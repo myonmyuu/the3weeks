@@ -1,3 +1,5 @@
+use serde::{Deserialize, Serialize};
+
 use super::prelude::*;
 
 use crate::prelude::*;
@@ -5,13 +7,21 @@ use crate::user::prelude::*;
 #[cfg(feature = "server")]
 use super::util::*;
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct VfsGetNodeArgs {
+	pub show_hidden: bool,
+}
+
 #[server]
 pub async fn get_vfs_nodes(
 	at: VfsTarget,
+	args: Option<VfsGetNodeArgs>,
 ) -> Result<Vec<PubVfsNode>, ServerFnError> {
 	let (id, _) = require_auth().await?;
 	let db = extract_db()?;
 	
+	// println!("getting nodes at {at:?}");
+
 	let (id, path) = match at {
 		VfsTarget::Node(id) => (
 			id,
@@ -29,26 +39,28 @@ pub async fn get_vfs_nodes(
 		},
 	};
 
+	let show_hidden = args.map(|args| args.show_hidden).unwrap_or(false);
+
 	let vals = sqlx::query!("
 		SELECT * FROM vfs_nodes
 		WHERE parent_id = $1
+		  AND (hide = false OR hide = $2)
 		;",
-		id
+		id,
+		show_hidden
 	)
 		.fetch_all(&db)
 		.await?
-		.iter()
-		.map(|rec| PubVfsNode {
-			id: rec.id,
-			name: rec.node_name.clone(),
-			path: path.clone().join(rec.node_name.clone()),
-			node_type: rec.vfs_file
-				.map(|file_id| PubVfsNodeType::Audio)
-				.unwrap_or(PubVfsNodeType::Folder)
-		})
-		.collect()
 	;
-	Ok(vals)
+	futures::future::join_all(vals
+		.iter()
+		.map(async |rec| get_pub_vfs_node(&db, rec.id)
+			.await
+			.map_err(make_server_err)
+		))
+		.await
+		.into_iter()
+		.collect()
 }
 
 #[server]
@@ -68,7 +80,10 @@ pub async fn create_vfs_node(
 
 	let id = create_vfs_node_internal(
 		&db,
-		name,
+		VfsNodeCreateArgs {
+			name: name,
+			hide: false
+		},
 		Some(parent)
 	)
 		.await

@@ -1,5 +1,6 @@
 #![feature(bool_to_result)]
 #![feature(path_add_extension)]
+#![feature(stmt_expr_attributes)]
 
 pub mod prelude {
 	pub use leptos::prelude::*;

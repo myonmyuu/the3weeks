@@ -31,6 +31,8 @@ youtube_dl.workspace = true
 const_format.workspace = true
 ffmpeg-sidecar.workspace = true
 anyhow.workspace = true
+futures.workspace = true
+infer.workspace = true
 
 dotenvy = "0.15.7"
 

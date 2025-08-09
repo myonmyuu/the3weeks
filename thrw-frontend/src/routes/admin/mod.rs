@@ -18,7 +18,7 @@ pub fn AdminRoutes() -> impl MatchNestedRoutes + Clone {
 			redirect_path=||"/"
 		>
 			<Route path=path!("/") view=EmptyView />
-			<Route path=path!("keys") view=KeyManager />
+			<Route path=path!("/keys") view=KeyManager />
 		</ProtectedParentRoute>
 	}
 	.into_inner()

@@ -31,7 +31,8 @@ youtube_dl = { workspace = true, optional = true }
 const_format.workspace = true
 ffmpeg-sidecar = { workspace = true, optional = true }
 anyhow.workspace = true
-
+futures = { workspace = true, optional = true }
+infer = { workspace = true, optional = true }
 
 [features]
 default = [
@@ -48,4 +49,6 @@ server = [
 	"tokio",
 	"youtube_dl",
 	"ffmpeg-sidecar",
+	"futures",
+	"infer"
 ]

@@ -1,7 +1,7 @@
 use std::{ffi::{OsStr, OsString}, future::{join, Future}};
 
 use sqlx::{Pool, Postgres};
-use thrw_shared::{app::media_request::{DownloaderContext, MediaRequest, MediaRequestError, YtdlRequest, YtdlResult}, downloader::shared::DownloaderError, make_error_type, media::util::get_media_file_metadata, vfs::util::{commit_file_to_vfs, VFSFileType}};
+use thrw_shared::{app::media_request::{DownloaderContext, MediaRequest, MediaRequestError, YtdlRequest, YtdlResult}, downloader::shared::DownloaderError, make_error_type, media::util::get_media_file_metadata, vfs::util::{commit_file_to_vfs, FileRef, VFSFileType}};
 use tokio::{sync::{mpsc::{unbounded_channel, UnboundedReceiver}, oneshot}, try_join};
 
 mod consts {
@@ -37,6 +37,7 @@ async fn handle_yt_dl(
 		.socket_timeout("15")
 		.youtube_dl_path(consts::YT_DL_PATH)
 		.extract_audio(req.audio_only)
+		.extra_arg("--write-thumbnail")
 		.output_template(format!("{}.%(ext)s", consts::YT_DL_TEMP_FILENAME))
 	;
 
@@ -55,14 +56,43 @@ async fn handle_yt_dl(
 		.collect()
 	;
 	let files = files.map_err(DownloaderError::Io)?;
-	let entry = files
+	let file_refs: Vec<FileRef> = files
 		.iter()
-		.find(|en| en.path().with_extension("").file_name().map(OsStr::to_str).unwrap_or(Some("")).unwrap_or("") == consts::YT_DL_TEMP_FILENAME)
-		.ok_or(DownloaderError::NoTempFile)?
+		.filter(|en| en.path().with_extension("").file_name().map(OsStr::to_str).unwrap_or(Some("")).unwrap_or("") == consts::YT_DL_TEMP_FILENAME)
+		.map(|entry| entry.into())
+		.collect()
 	;
 
+	let mut media = None;
+	let mut thumbnail = None;
+
+	for file in file_refs {
+		let data = std::fs::read(&file.path)
+			.map_err(DownloaderError::Io)?
+		;
+		let infer_data = infer::get(&data);
+		match infer_data {
+			Some(itype) => match itype.matcher_type() {
+				  infer::MatcherType::Video
+				| infer::MatcherType::Audio => media = Some(file),
+				infer::MatcherType::Image => thumbnail = Some(file),
+				_ => {
+					println!("invalid file type received from ytdl, removing");
+					let _ = file.delete_file();
+					continue;
+				},
+			},
+			None => {
+				println!("unable to determine ytdl file type, removing");
+				let _ = file.delete_file();
+				continue;
+			},
+		};
+	}
+	
 	let result = YtdlResult {
-		file: entry.into(),
+		media: media.ok_or(DownloaderError::NoTempFile)?,
+		thumbnail,
 		output: output,
 	};
 	Ok(result)

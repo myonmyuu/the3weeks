@@ -33,12 +33,25 @@ pub fn shell(options: LeptosOptions) -> impl IntoView {
 }
 
 #[component]
-pub fn EmptyParent() -> impl IntoView {
+pub fn app_parent() -> impl IntoView {
+	view! {
+		<div
+			on:contextmenu=move|ev| {
+				ev.prevent_default();
+			}
+		>
+			<Outlet />
+		</div>
+	}
+}
+
+#[component]
+pub fn empty_parent() -> impl IntoView {
 	view! { <Outlet /> }
 }
 
 #[component]
-pub fn EmptyView() -> impl IntoView {
+pub fn empty_view() -> impl IntoView {
 	view! { Nothing to see here yet, slut }
 }
 
@@ -87,7 +100,7 @@ pub fn App() -> impl IntoView {
 	view! {
 		<Stylesheet id="leptos" href="/pkg/thrw.css"/>
 
-		<Title text="7sins"/>
+		<Title text="The 3 Weeks"/>
 
 		<Router>
 			<Header />
