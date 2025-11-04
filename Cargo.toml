@@ -1,5 +1,10 @@
 [workspace]
-members = ["thrw-webserver", "thrw-frontend", "thrw-shared", "thrw-bind"]
+members = [
+	"crates/thrw-webserver",
+	"crates/thrw-frontend",
+	"crates/thrw-shared",
+	"crates/thrw-bind"
+]
 resolver = "2"
 
 [workspace.dependencies]
@@ -19,30 +24,33 @@ codee = "0.3.2"
 youtube_dl = { version = "0.10.0", features = ["tokio", "downloader-rustls-tls"] }
 const_format = "0.2.34"
 ffmpeg-sidecar = "2.1.0"
-anyhow = "=1.0.98"
+anyhow = "1.0.100"
 futures = "0.3.31"
 infer = "0.19.0"
 
-axum = { version = "0.8.4", features = ["macros"] }
-axum-extra = { version ="0.10.1", features = ["cookie"] }
-axum-core = "0.5.2"
-leptos = { version = "0.8.2", features = ["nightly"] }
-leptos_router = { version = "0.8.2", features = ["nightly"] }
-leptos_axum = "0.8.2"
-leptos_meta = { version = "0.8.2" }
-leptos-use = { version = "0.16.2", features = [] }
+axum = { version = "0.8.6", features = ["macros"] }
+axum-extra = { version ="0.12.1", features = ["cookie"] }
+axum-core = "0.5.5"
+leptos = { version = "0.8.12", features = ["nightly"] }
+leptos_router = { version = "0.8.9", features = ["nightly"] }
+leptos_axum = "0.8.6"
+leptos_meta = { version = "0.8.5" }
+leptos-use = { version = "0.16.3", features = [] }
 
 tokio = { version = "1.46.1", default-features = false }
 tower = { version = "0.5.2", features = ["full"] }
 tower-http = { version = "0.6.4", features = ["full"] }
-wasm-bindgen = { version = "=0.2.100", features = ["serde"] }
+wasm-bindgen = { version = "0.2.105", features = ["serde"] }
 
-cookie = { version = "0.18", features = ["signed"]}
+cookie = { version = "0.18", features = ["signed"] }
 console_error_panic_hook = "0.1.7"
 console_log = "1.0.0"
 
+[profile.dev.package.sqlx-macros]
+opt-level = 3
+
 [[workspace.metadata.leptos]]
-name = "ssins"
+name = "thrw"
 # the package in the workspace that contains the server binary (binary crate)
 bin-package = "thrw-webserver"
 # the package in the workspace that contains the frontend wasm binary (library crate)

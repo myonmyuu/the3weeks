@@ -5,27 +5,30 @@ edition = "2024"
 
 [dependencies]
 thrw-shared = { path = "../thrw-shared" }
-leptos.workspace = true
-leptos-use.workspace = true
-leptos_meta.workspace = true
-leptos_router.workspace = true
+
+leptos = { workspace = true }
+leptos-use = { workspace = true }
+leptos_meta = { workspace = true }
+leptos_router = { workspace = true }
 leptos_axum = { workspace = true, optional = true }
-log.workspace = true
-serde_json.workspace = true
-wasm-bindgen.workspace = true
-serde.workspace = true
-serde-wasm-bindgen = "0.6.5"
-js-sys.workspace = true
-web-sys.workspace = true
+log = { workspace = true }
+serde_json = { workspace = true }
+wasm-bindgen = { workspace = true }
+serde = { workspace = true }
+js-sys = { workspace = true }
+web-sys = { workspace = true }
 sqlx = { workspace = true, optional = true }
-gloo-utils.workspace = true
-gloo-timers.workspace = true
-argon2.workspace = true
-chrono.workspace = true
+gloo-utils = { workspace = true }
+gloo-timers = { workspace = true }
+argon2 = { workspace = true }
+chrono = { workspace = true }
 tokio = { workspace = true, features = ["sync"] }
-idb = "0.6.4"
-codee.workspace = true
+codee = { workspace = true }
 uuid = { workspace = true, features = ["js"] }
+
+serde-wasm-bindgen = "0.6.5"
+idb = "0.6.4"
+
 
 [features]
 default = [
